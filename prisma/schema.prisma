@@ -1,0 +1,44 @@
+// Prisma schema for Events & Tickets
+// Run: npx prisma generate
+// For first migration: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id             String   @id @map("_id") @default(auto()) @db.ObjectId
+  name           String
+  dates          Json
+  description    String?
+  templateImage  String?
+  templateConfig Json?
+  createdAt      DateTime @default(now())
+  tickets        Ticket[]
+}
+
+model Ticket {
+  id         String   @id @map("_id") @default(auto()) @db.ObjectId
+  ticketCode String
+  eventId    String   @db.ObjectId
+  event      Event    @relation(fields: [eventId], references: [id])
+  name       String
+  date       String?
+  other      String?
+  email      String?  // Added: attendee email for sending ticket & verification
+  issuedAt   DateTime @default(now())
+  hasEntered Boolean  @default(false)
+  enteredAt  DateTime?
+  signature  String?
+
+  @@unique([eventId, ticketCode])
+  @@index([eventId])
+  @@index([ticketCode])
+  @@index([hasEntered])
+  @@index([email])
+}

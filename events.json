@@ -1,0 +1,38 @@
+[
+  {
+    "id": "c6cd186c-dacd-43ae-81e3-c8e89f6f700c",
+    "name": "Garba Night",
+    "dates": [
+      "2025-10-06"
+    ],
+    "description": "Come and join us and have FUN !!",
+    "createdAt": "2025-09-28T08:49:26.325Z",
+    "templateImage": "/templates/c6cd186c-dacd-43ae-81e3-c8e89f6f700c-58d5379b5a2a.jpg",
+    "templateUpdatedAt": "2025-09-28T09:12:01.363Z",
+    "templateConfig": {
+      "name": {
+        "x": 1621,
+        "y": 468,
+        "fontSize": 48,
+        "color": "#000000",
+        "align": "left",
+        "baseline": "top",
+        "rotation": 270
+      },
+      "outline": false,
+      "dateEnabled": false,
+      "otherEnabled": true,
+      "other": {
+        "x": 1716,
+        "y": 503,
+        "fontSize": 48,
+        "color": "#000000",
+        "align": "left",
+        "baseline": "top",
+        "rotation": 270,
+        "text": "OTHER"
+      }
+    },
+    "templateLayoutUpdatedAt": "2025-09-29T13:37:06.639Z"
+  }
+]

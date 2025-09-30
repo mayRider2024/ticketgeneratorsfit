@@ -1,0 +1,31 @@
+{
+  "name": "ticketgenerator",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "email:test": "node scripts/testEmail.js"
+  },
+  "dependencies": {
+    "jsqr": "^1.4.0",
+    "qrcode": "^1.5.3",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "next": "15.5.4",
+    "nodemailer": "^6.9.13",
+    "dotenv": "^16.4.5",
+    "googleapis": "^144.0.0",
+  "resend": "^3.3.0",
+    "@clerk/nextjs": "^5.7.0",
+    "@prisma/client": "^5.19.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "tailwindcss": "^4",
+    "prisma": "^5.19.0"
+  }
+}
