@@ -7,6 +7,7 @@ const ALLOWED_PHONE = process.env.NEXT_PUBLIC_ALLOWED_PHONE?.trim();
 
 export default function Home() {
   const { user } = useUser();
+  
   const userEmail = user?.primaryEmailAddress?.emailAddress;
   const userPhone = user?.primaryPhoneNumber?.phoneNumber;
   const emailAllowed = ALLOWED_EMAIL ? userEmail === ALLOWED_EMAIL : true;

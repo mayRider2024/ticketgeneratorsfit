@@ -9,6 +9,10 @@ export default function QrScanner({ eventId }) {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [statusCode, setStatusCode] = useState(null); // 'first_entry' | 'already_entered' | 'not_found'
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const lastScannedRef = useRef(null);
+  const timeoutRef = useRef(null);
 
   useEffect(() => {
     let stream;
@@ -17,12 +21,15 @@ export default function QrScanner({ eventId }) {
         .then(s => { stream = s; videoRef.current.srcObject = s; videoRef.current.play(); scanLoop(); })
         .catch(e => setError(e.message));
     }
-    return () => { if (stream) stream.getTracks().forEach(t=>t.stop()); };
+    return () => { 
+      if (stream) stream.getTracks().forEach(t=>t.stop()); 
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
   const scanLoop = () => {
-    if (!active) return;
+    if (!active || isProcessing) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (video && video.readyState === 4) {
@@ -32,7 +39,7 @@ export default function QrScanner({ eventId }) {
       ctx.drawImage(video,0,0,canvas.width,canvas.height);
       const img = ctx.getImageData(0,0,canvas.width,canvas.height);
       const code = jsQR(img.data, canvas.width, canvas.height);
-      if (code) {
+      if (code && code.data !== lastScannedRef.current) {
         handleCode(code.data);
       }
     }
@@ -40,10 +47,16 @@ export default function QrScanner({ eventId }) {
   };
 
   const handleCode = async (data) => {
+    if (isProcessing) return;
+    
+    setIsProcessing(true);
+    lastScannedRef.current = data;
+    
     try {
       const parsed = JSON.parse(data);
       if (parsed.eventId !== eventId) {
         setError('Ticket for different event');
+        startCooldown();
         return;
       }
       const res = await fetch('/api/scan', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(parsed)});
@@ -52,23 +65,49 @@ export default function QrScanner({ eventId }) {
       if (!json.ok && json.status === 'not_found') {
         setStatusCode('not_found');
         setResult(null);
+        startCooldown();
         return;
       }
       setStatusCode(json.status);
       setResult(json.ticket);
       setError('');
+      startCooldown();
     } catch (e) {
       setError(e.message);
+      startCooldown();
     }
+  };
+
+  const startCooldown = () => {
+    setCountdown(7);
+    const countdownInterval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          setIsProcessing(false);
+          lastScannedRef.current = null;
+          setStatusCode(null);
+          setResult(null);
+          setError('');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         <button onClick={()=>setActive(a=>!a)} className="px-4 py-2 rounded bg-indigo-600 text-white text-sm">{active? 'Stop':'Start'} Scanner</button>
-        {statusCode === 'first_entry' && <span className="text-xs text-emerald-400">Entry Granted</span>}
-        {statusCode === 'already_entered' && <span className="text-xs text-red-400">Already Entered</span>}
-        {statusCode === 'not_found' && <span className="text-xs text-red-400">Unknown Ticket</span>}
+        {statusCode === 'first_entry' && <span className="text-xs text-emerald-400">✅ Entry Granted</span>}
+        {statusCode === 'already_entered' && <span className="text-xs text-red-400">❌ Already Entered</span>}
+        {statusCode === 'not_found' && <span className="text-xs text-red-400">❌ Unknown Ticket</span>}
+        {isProcessing && countdown > 0 && (
+          <span className="text-xs text-yellow-400">
+            ⏳ Wait {countdown}s before next scan
+          </span>
+        )}
       </div>
       {error && <div className="text-sm text-red-400">{error}</div>}
       <video ref={videoRef} className="w-full max-w-md rounded border border-gray-700" muted playsInline />

@@ -11,21 +11,22 @@
     "email:test": "node scripts/testEmail.js"
   },
   "dependencies": {
+    "@clerk/nextjs": "^5.7.0",
+    "@prisma/client": "^5.19.0",
+    "dotenv": "^16.4.5",
     "jsqr": "^1.4.0",
+    "next": "15.5.4",
+    "nodemailer": "^6.10.1",
     "qrcode": "^1.5.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.5.4",
-    "nodemailer": "^6.9.13",
-    "dotenv": "^16.4.5",
-    "googleapis": "^144.0.0",
-  "resend": "^3.3.0",
-    "@clerk/nextjs": "^5.7.0",
-    "@prisma/client": "^5.19.0"
+    "resend": "^3.3.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
-    "prisma": "^5.19.0"
+    "@types/nodemailer": "^7.0.2",
+    "prisma": "^5.19.0",
+    "tailwindcss": "^4"
   }
 }

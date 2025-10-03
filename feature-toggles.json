@@ -1,0 +1,8 @@
+{
+  "addEventSection": true,
+  "removeEventButton": true,
+  "designTicketButton": true,
+  "generateTicketButton": true,
+  "scanTicketsButton": true,
+  "ticketsButton": true
+}

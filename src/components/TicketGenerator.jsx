@@ -143,25 +143,46 @@ export default function TicketGenerator({ event }) {
     try {
       await ensureIssued();
       setSending(true);
-      // Always redraw to ensure latest canvas; attach as data URL maybe later.
+      // Always redraw to ensure latest canvas
       await draw();
       const canvas = canvasRef.current;
-      let imageDataUrl = '';
-      if (canvas) {
-        // Ticket image as PNG data URL; server can decode & attach.
-        imageDataUrl = canvas.toDataURL('image/png');
-      }
-      const res = await fetch('/api/tickets/send-email', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ eventId: event.id, ticketId, email: email.trim(), imageDataUrl }) });
-      let json;
-      try { json = await res.json(); } catch { json = {}; }
-      if (!res.ok || !json.ok) {
-        const detail = [json.error, json.details, json.provider].filter(Boolean).join(' | ');
-        throw new Error(detail || 'Failed to send');
-      }
-      setStatus('Email sent');
+      if (!canvas) throw new Error('Canvas not available');
+
+      // Convert canvas to blob and create FormData
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          setError('Failed to generate ticket image');
+          setSending(false);
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('email', email.trim());
+        formData.append('name', name.trim());
+        formData.append('eventName', event.name);
+        formData.append('ticketImage', blob, 'ticket.png');
+
+        try {
+          const res = await fetch('/api/tickets/send-ticket', { 
+            method: 'POST', 
+            body: formData 
+          });
+          const json = await res.json();
+          
+          if (!res.ok) {
+            throw new Error(json.error || 'Failed to send ticket');
+          }
+          
+          setStatus('Email sent successfully!');
+          setError('');
+        } catch (e) {
+          setError(`Failed to send email: ${e.message}`);
+        } finally {
+          setSending(false);
+        }
+      }, 'image/png');
     } catch (e) {
       setError(e.message);
-    } finally {
       setSending(false);
     }
   }

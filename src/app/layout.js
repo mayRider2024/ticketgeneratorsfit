@@ -4,6 +4,8 @@ import Buttons from "@/components/buttons";
 import Navbar from "@/components/Navbar";
 import MyButton from "@/components/MyButton";
 import Providers from "./providers";
+import AdminLink from "@/components/AdminLink";
+import SessionClearer from "@/components/SessionClearer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,9 +27,10 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>
+          <SessionClearer />
           <Navbar />
           <MyButton />
-          <p>mayuresh </p>
+          <p><AdminLink /> </p>
           {children}
           <Buttons />
         </Providers>
