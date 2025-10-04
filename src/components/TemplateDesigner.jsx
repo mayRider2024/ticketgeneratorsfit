@@ -1,9 +1,10 @@
 "use client";
-import React, { useEffect, useRef, useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { getTemplateUrl } from '../lib/templateUtils';
 
 export default function TemplateDesigner({ event }) {
   const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(event.templateImage || null);
+  const [preview, setPreview] = useState(getTemplateUrl(event.templateImage) || null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -280,7 +281,7 @@ export default function TemplateDesigner({ event }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Upload failed');
       setSuccess('Template saved');
-      if (data.event?.templateImage) setPreview(data.event.templateImage);
+      if (data.event?.templateImage) setPreview(getTemplateUrl(data.event.templateImage));
     } catch (e) {
       setError(e.message);
     } finally {

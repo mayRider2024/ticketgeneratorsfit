@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from 'react';
 import * as QRCode from 'qrcode';
+import { getTemplateDataUrl } from '../lib/templateUtils';
 
 // Simplified TicketGenerator: uses saved layout only; no manual position/style editing here.
 export default function TicketGenerator({ event }) {
@@ -27,7 +28,18 @@ export default function TicketGenerator({ event }) {
   // Preload image
   useEffect(() => {
     if (!event.templateImage) return;
-    loadImage(event.templateImage).then(img => setImageEl(img)).catch(()=>{});
+    const loadTemplateImage = async () => {
+      try {
+        const dataUrl = await getTemplateDataUrl(event.templateImage);
+        if (dataUrl) {
+          const img = await loadImage(dataUrl);
+          setImageEl(img);
+        }
+      } catch (error) {
+        console.error('Error loading template image:', error);
+      }
+    };
+    loadTemplateImage();
   }, [event.templateImage]);
 
   // Redraw on input changes or config/image load
