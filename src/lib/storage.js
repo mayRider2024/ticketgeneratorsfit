@@ -10,7 +10,8 @@ let memoryStore = {
     designTicketButton: true,
     generateTicketButton: true,
     scanTicketsButton: true,
-    ticketsButton: true
+    ticketsButton: true,
+    removeTicketButton: true
   },
   templates: {},
   scans: [],

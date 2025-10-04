@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-// File path for storing feature toggle settings
-const TOGGLES_FILE = path.join(process.cwd(), 'feature-toggles.json');
+import { getMemoryData, setMemoryData } from '../../../../lib/storage.js';
 
 // Default feature toggles
 const DEFAULT_TOGGLES = {
@@ -16,24 +12,21 @@ const DEFAULT_TOGGLES = {
   removeTicketButton: true
 };
 
-// Read feature toggles from file
+// Read feature toggles from memory storage
 function readToggles() {
   try {
-    if (fs.existsSync(TOGGLES_FILE)) {
-      const data = fs.readFileSync(TOGGLES_FILE, 'utf8');
-      return { ...DEFAULT_TOGGLES, ...JSON.parse(data) };
-    }
-    return DEFAULT_TOGGLES;
+    const toggles = getMemoryData('featureToggles');
+    return { ...DEFAULT_TOGGLES, ...toggles };
   } catch (error) {
     console.error('Error reading feature toggles:', error);
     return DEFAULT_TOGGLES;
   }
 }
 
-// Write feature toggles to file
+// Write feature toggles to memory storage
 function writeToggles(toggles) {
   try {
-    fs.writeFileSync(TOGGLES_FILE, JSON.stringify(toggles, null, 2));
+    setMemoryData('featureToggles', toggles);
     return true;
   } catch (error) {
     console.error('Error writing feature toggles:', error);

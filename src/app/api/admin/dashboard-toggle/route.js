@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const STATUS_FILE = path.join(process.cwd(), 'dashboard-status.json');
+import { setMemoryData } from '../../../../lib/storage.js';
 
 export async function POST(request) {
   try {
     const { enabled } = await request.json();
     
-    // Write new status to file
+    // Write new status to memory storage
     const statusData = { enabled };
-    fs.writeFileSync(STATUS_FILE, JSON.stringify(statusData));
+    setMemoryData('dashboardStatus', statusData);
     
     return NextResponse.json({
       success: true,
