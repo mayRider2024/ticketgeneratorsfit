@@ -1,11 +1,9 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-
-const isProtectedRoute = createRouteMatcher([
-  '/admin-control(.*)',
-]);
+import { clerkMiddleware } from '@clerk/nextjs/server';
 
 export default clerkMiddleware((auth, req) => {
-  if (isProtectedRoute(req)) auth().protect();
+  // Let Clerk handle all authentication and session management
+  // No custom redirects or protection logic
+  // This ensures session persistence across navigation and refreshes
 });
 
 export const config = {

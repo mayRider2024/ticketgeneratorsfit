@@ -1,9 +1,11 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { user, isLoaded } = useUser();
   const [name, setName] = useState('');
   const [dateInput, setDateInput] = useState('');
   const [dates, setDates] = useState([]); // list of date strings
@@ -79,13 +81,31 @@ export default function DashboardPage() {
     }
   }, [accessAllowed]);
 
-  // Show loading while checking access
-  if (accessAllowed === null) {
+  // Show loading while checking access or Clerk is loading
+  if (accessAllowed === null || !isLoaded) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Checking access...</p>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if user is not authenticated (but don't auto-redirect)
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
+          <p className="text-gray-400 mb-4">Please sign in to access the dashboard.</p>
+          <button 
+            onClick={() => router.push('/')} 
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Go to Sign In
+          </button>
         </div>
       </div>
     );
