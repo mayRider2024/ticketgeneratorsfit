@@ -1,13 +1,69 @@
 import { randomUUID } from 'crypto';
 import { prisma } from './prismaClient';
 import { getMemoryData, setMemoryData } from './storage.js';
+import { promises as fs } from 'fs';
+import path from 'path';
+
+const filePath = path.join(process.cwd(), 'events.json');
+
+// Initialize memory storage with data from file system (for migration)
+async function initializeEventsFromFile() {
+  try {
+    // Check if data already exists in memory
+    const existingData = getMemoryData('events');
+    if (existingData && existingData.length > 0) {
+      return existingData; // Already initialized
+    }
+
+    // Try to read from file system
+    try {
+      await fs.access(filePath);
+      const raw = await fs.readFile(filePath, 'utf8');
+      const fileData = JSON.parse(raw || '[]');
+      if (Array.isArray(fileData) && fileData.length > 0) {
+        // Load file data into memory
+        setMemoryData('events', fileData);
+        console.log(`Loaded ${fileData.length} events from file system into memory`);
+        return fileData;
+      }
+    } catch (fileError) {
+      // File doesn't exist or is invalid, that's okay
+      console.log('No existing events file found, starting with empty events');
+    }
+
+    // Set empty array if no data found
+    setMemoryData('events', []);
+    return [];
+  } catch (error) {
+    console.error('Error initializing events from file:', error);
+    setMemoryData('events', []);
+    return [];
+  }
+}
 
 export async function getEvents() {
+  // Always try database first if available
   if (prisma) {
-    return prisma.event.findMany({ orderBy: { createdAt: 'desc' } });
+    try {
+      const events = await prisma.event.findMany({ 
+        orderBy: { createdAt: 'desc' },
+        include: {
+          _count: {
+            select: { tickets: true }
+          }
+        }
+      });
+      console.log(`Loaded ${events.length} events from database`);
+      return events;
+    } catch (error) {
+      console.error('Database error, falling back to memory storage:', error);
+    }
   }
   
   try {
+    // Initialize from file if needed
+    await initializeEventsFromFile();
+    
     const data = getMemoryData('events') || [];
     if (!Array.isArray(data)) return [];
     return data.sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt));

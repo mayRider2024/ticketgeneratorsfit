@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { setEventTemplate } from '@/lib/eventsStore';
 import { setMemoryData, getMemoryData } from '../../../../lib/storage.js';
+import { prisma } from '../../../../lib/prismaClient.js';
 import path from 'path';
 import crypto from 'crypto';
 
@@ -26,13 +27,27 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
     }
 
-    // Convert image to base64 data URL for memory storage (Vercel compatible)
+    // Convert image to base64 data URL
     const mimeType = ext === '.png' ? 'image/png' : 
                      ext === '.webp' ? 'image/webp' : 'image/jpeg';
     const base64 = buffer.toString('base64');
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
-    // Store in memory with a unique identifier
+    // If database is available, store data URL directly in the database
+    if (prisma) {
+      try {
+        const updated = await prisma.event.update({
+          where: { id },
+          data: { templateImage: dataUrl }
+        });
+        console.log('Template stored in database for event:', id);
+        return NextResponse.json({ event: updated });
+      } catch (error) {
+        console.error('Database error, falling back to memory storage:', error);
+      }
+    }
+
+    // Fallback: Store in memory with a unique identifier
     const hash = crypto.createHash('sha1').update(buffer).digest('hex').slice(0,12);
     const templateId = `${id}-${hash}`;
     
@@ -46,7 +61,7 @@ export async function POST(req) {
     };
     setMemoryData('templates', templates);
 
-    // Use template ID as the path reference
+    // Use template ID as the path reference for memory storage
     const templatePath = templateId;
     const updated = await setEventTemplate(id, templatePath);
 
