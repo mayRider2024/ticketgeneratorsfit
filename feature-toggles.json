@@ -4,5 +4,6 @@
   "designTicketButton": true,
   "generateTicketButton": true,
   "scanTicketsButton": true,
-  "ticketsButton": true
+  "ticketsButton": true,
+  "removeTicketButton": false
 }

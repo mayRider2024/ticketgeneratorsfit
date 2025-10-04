@@ -102,6 +102,42 @@ export async function listTicketsByEvent(eventId) {
   return all.filter(t => t.eventId === eventId);
 }
 
+export async function deleteTicket(eventId, ticketId) {
+  if (!eventId || !ticketId) {
+    throw new Error('eventId and ticketId are required');
+  }
+
+  if (prisma) {
+    try {
+      const existing = await prisma.ticket.findFirst({ 
+        where: { eventId, ticketCode: ticketId } 
+      });
+      
+      if (!existing) {
+        return false; // Ticket not found
+      }
+      
+      await prisma.ticket.delete({ where: { id: existing.id } });
+      return true;
+    } catch (error) {
+      console.error('Error deleting ticket from database:', error);
+      throw error;
+    }
+  }
+
+  // File-based storage fallback
+  const all = await readAll();
+  const ticketIndex = all.findIndex(t => t.eventId === eventId && t.ticketId === ticketId);
+  
+  if (ticketIndex === -1) {
+    return false; // Ticket not found
+  }
+  
+  all.splice(ticketIndex, 1);
+  await writeAll(all);
+  return true;
+}
+
 function mapDbTicket(t) {
   return {
     eventId: t.eventId,

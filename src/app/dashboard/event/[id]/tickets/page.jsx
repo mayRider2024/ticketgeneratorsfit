@@ -12,6 +12,10 @@ export default function TicketsPage({ params }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'entered', 'not_entered'
   const [isDownloading, setIsDownloading] = useState(false);
+  const [featureToggles, setFeatureToggles] = useState({
+    removeTicketButton: true
+  });
+  const [removingTicket, setRemovingTicket] = useState(null);
 
   useEffect(() => {
     const initializeParams = async () => {
@@ -24,8 +28,21 @@ export default function TicketsPage({ params }) {
   useEffect(() => {
     if (eventId) {
       fetchTickets();
+      fetchFeatureToggles();
     }
   }, [eventId]);
+
+  const fetchFeatureToggles = async () => {
+    try {
+      const response = await fetch('/api/admin/feature-toggles');
+      const data = await response.json();
+      if (data.success) {
+        setFeatureToggles(data.toggles);
+      }
+    } catch (error) {
+      console.error('Error fetching feature toggles:', error);
+    }
+  };
 
   const fetchTickets = async () => {
     try {
@@ -44,6 +61,34 @@ export default function TicketsPage({ params }) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRemoveTicket = async (ticketId) => {
+    if (!confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) {
+      return;
+    }
+
+    setRemovingTicket(ticketId);
+    try {
+      const response = await fetch(`/api/tickets/delete?eventId=${eventId}&ticketId=${ticketId}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Remove ticket from local state
+        setTickets(prevTickets => prevTickets.filter(ticket => ticket.ticketId !== ticketId));
+        setError('');
+      } else {
+        setError(data.error || 'Failed to delete ticket');
+      }
+    } catch (err) {
+      console.error('Error deleting ticket:', err);
+      setError('Network error while deleting ticket');
+    } finally {
+      setRemovingTicket(null);
     }
   };
 
@@ -247,6 +292,11 @@ export default function TicketsPage({ params }) {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Entered At
                   </th>
+                  {featureToggles.removeTicketButton && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
@@ -284,6 +334,26 @@ export default function TicketsPage({ params }) {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                       {ticket.enteredAt ? new Date(ticket.enteredAt).toLocaleString() : 'N/A'}
                     </td>
+                    {featureToggles.removeTicketButton && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button
+                          onClick={() => handleRemoveTicket(ticket.ticketId)}
+                          disabled={removingTicket === ticket.ticketId}
+                          className="inline-flex items-center px-3 py-1 bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white text-xs font-medium rounded-md transition-colors"
+                        >
+                          {removingTicket === ticket.ticketId ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                              Removing...
+                            </>
+                          ) : (
+                            <>
+                              🗑️ Remove
+                            </>
+                          )}
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

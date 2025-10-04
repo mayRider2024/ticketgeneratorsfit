@@ -12,7 +12,8 @@ const DEFAULT_TOGGLES = {
   designTicketButton: true,
   generateTicketButton: true,
   scanTicketsButton: true,
-  ticketsButton: true
+  ticketsButton: true,
+  removeTicketButton: true
 };
 
 // Read feature toggles from file

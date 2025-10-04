@@ -19,7 +19,8 @@ export default function AdminControlPage() {
     designTicketButton: true,
     generateTicketButton: true,
     scanTicketsButton: true,
-    ticketsButton: true
+    ticketsButton: true,
+    removeTicketButton: true
   });
   const [togglesLoading, setTogglesLoading] = useState(false);
 
@@ -446,6 +447,32 @@ export default function AdminControlPage() {
                 featureToggles.ticketsButton ? 'text-green-400' : 'text-red-400'
               }`}>
                 {featureToggles.ticketsButton ? 'VISIBLE' : 'HIDDEN'}
+              </div>
+            </div>
+
+            {/* Remove Ticket Button Toggle */}
+            <div className="bg-gray-700 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-white font-medium">Remove Ticket Button</h3>
+                <button
+                  onClick={() => updateFeatureToggle('removeTicketButton', !featureToggles.removeTicketButton)}
+                  disabled={togglesLoading}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    featureToggles.removeTicketButton ? 'bg-green-600' : 'bg-red-600'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                      featureToggles.removeTicketButton ? 'translate-x-5' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              <p className="text-gray-400 text-sm">Show/hide remove buttons for individual tickets</p>
+              <div className={`mt-2 text-xs font-medium ${
+                featureToggles.removeTicketButton ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {featureToggles.removeTicketButton ? 'VISIBLE' : 'HIDDEN'}
               </div>
             </div>
           </div>
