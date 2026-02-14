@@ -29,15 +29,16 @@ export async function POST(request) {
     if (result.success) {
       return NextResponse.json({ message: 'Ticket sent successfully!' });
     } else {
+      console.error('Email send failed:', result.error);
       return NextResponse.json(
-        { error: 'Failed to send ticket email' },
+        { error: result.error || 'Failed to send ticket email' },
         { status: 500 }
       );
     }
   } catch (error) {
     console.error('Error in send-ticket API:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error.message || 'Internal server error' },
       { status: 500 }
     );
   }

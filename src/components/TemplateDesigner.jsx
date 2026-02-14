@@ -198,6 +198,13 @@ export default function TemplateDesigner({ event }) {
         setDragging(p.key); return;
       }
     }
+    // Check if clicking inside the QR rectangle area
+    const qrRectX = qrDerived.x * scale;
+    const qrRectY = qrDerived.y * scale;
+    const qrRectSize = qrPos.size * scale;
+    if (cx >= qrRectX && cx <= qrRectX + qrRectSize && cy >= qrRectY && cy <= qrRectY + qrRectSize) {
+      setDragging('qr'); return;
+    }
     // If clicking on sample text bounding box
     if (showSample) {
       const nameBox = measureTextBox(namePos, sampleNameText, true, scale);
@@ -230,6 +237,11 @@ export default function TemplateDesigner({ event }) {
     setError('');
     setSuccess('');
     try {
+      // Resolve null QR Y to the actual computed value so the generator gets exact coordinates
+      const resolvedQr = {
+        ...qrPos,
+        y: qrPos.y !== null ? qrPos.y : (imgEl ? (imgEl.height - (qrPos.size || 400) - 12) : 1100)
+      };
       const res = await fetch('/api/events/template/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -237,7 +249,7 @@ export default function TemplateDesigner({ event }) {
           name: namePos,
           date: datePos,
           other: otherPos,
-          qr: qrPos,
+          qr: resolvedQr,
           dateEnabled,
           otherEnabled,
           outline

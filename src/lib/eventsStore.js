@@ -127,13 +127,20 @@ export async function updateTemplateConfig(id, config) {
     const dateEnabled = config?.dateEnabled !== false && !!config?.date;
     const otherEnabled = !!config?.otherEnabled && !!config?.other;
     const newConfig = {
-      name: { x: Number(config?.name?.x) || 0, y: Number(config?.name?.y) || 0, fontSize: Number(config?.name?.fontSize) || 48, color: config?.name?.color || '#ffffff', align: safeAlign(config?.name?.align), baseline: safeBaseline(config?.name?.baseline), rotation: Number(config?.name?.rotation) || 0 },
+      name: { x: Number(config?.name?.x) || 0, y: Number(config?.name?.y) || 0, fontSize: Number(config?.name?.fontSize) || 48, color: config?.name?.color || '#ffffff', align: safeAlign(config?.name?.align), baseline: safeBaseline(config?.name?.baseline), rotation: Number(config?.name?.rotation) || 0, fontFamily: config?.name?.fontFamily || 'Arial' },
       outline: Boolean(config?.outline),
       dateEnabled,
       otherEnabled
     };
-    if (dateEnabled) newConfig.date = { x: Number(config?.date?.x) || 0, y: Number(config?.date?.y) || 0, fontSize: Number(config?.date?.fontSize) || 28, color: config?.date?.color || '#ffeb3b', align: safeAlign(config?.date?.align), baseline: safeBaseline(config?.date?.baseline), rotation: Number(config?.date?.rotation) || 0 };
-    if (otherEnabled) newConfig.other = { x: Number(config?.other?.x) || 0, y: Number(config?.other?.y) || 0, fontSize: Number(config?.other?.fontSize) || 24, color: config?.other?.color || '#ffffff', align: safeAlign(config?.other?.align), baseline: safeBaseline(config?.other?.baseline), rotation: Number(config?.other?.rotation) || 0, text: config?.other?.text || '' };
+    if (dateEnabled) newConfig.date = { x: Number(config?.date?.x) || 0, y: Number(config?.date?.y) || 0, fontSize: Number(config?.date?.fontSize) || 28, color: config?.date?.color || '#ffeb3b', align: safeAlign(config?.date?.align), baseline: safeBaseline(config?.date?.baseline), rotation: Number(config?.date?.rotation) || 0, fontFamily: config?.date?.fontFamily || 'Arial' };
+    if (otherEnabled) newConfig.other = { x: Number(config?.other?.x) || 0, y: Number(config?.other?.y) || 0, fontSize: Number(config?.other?.fontSize) || 24, color: config?.other?.color || '#ffffff', align: safeAlign(config?.other?.align), baseline: safeBaseline(config?.other?.baseline), rotation: Number(config?.other?.rotation) || 0, fontFamily: config?.other?.fontFamily || 'Arial', text: config?.other?.text || '' };
+    if (config?.qr) {
+      newConfig.qr = {
+        x: Number(config.qr.x) || 0,
+        y: typeof config.qr.y === 'number' ? config.qr.y : 1100,
+        size: Number(config.qr.size) || 400
+      };
+    }
     return newConfig;
   };
   if (prisma) {

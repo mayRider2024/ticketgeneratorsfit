@@ -1,10 +1,6 @@
 import { clerkMiddleware } from '@clerk/nextjs/server';
 
-export default clerkMiddleware((auth, req) => {
-  // Let Clerk handle all authentication and session management
-  // No custom redirects or protection logic
-  // This ensures session persistence across navigation and refreshes
-});
+export default clerkMiddleware();
 
 export const config = {
   matcher: [

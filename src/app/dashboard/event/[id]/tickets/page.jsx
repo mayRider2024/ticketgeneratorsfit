@@ -13,8 +13,10 @@ export default function TicketsPage({ params }) {
   const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'entered', 'not_entered'
   const [isDownloading, setIsDownloading] = useState(false);
   const [featureToggles, setFeatureToggles] = useState({
-    removeTicketButton: true
+    removeTicketButton: true,
+    removeAllTicketsButton: true
   });
+  const [removingAll, setRemovingAll] = useState(false);
   const [removingTicket, setRemovingTicket] = useState(null);
 
   useEffect(() => {
@@ -89,6 +91,36 @@ export default function TicketsPage({ params }) {
       setError('Network error while deleting ticket');
     } finally {
       setRemovingTicket(null);
+    }
+  };
+
+  const handleRemoveAll = async () => {
+    if (!confirm(`Are you sure you want to delete ALL ${tickets.length} tickets for this event? This action cannot be undone.`)) {
+      return;
+    }
+    if (!confirm('This will permanently remove all ticket entries. Are you absolutely sure?')) {
+      return;
+    }
+
+    setRemovingAll(true);
+    try {
+      const response = await fetch(`/api/tickets/delete-all?eventId=${eventId}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setTickets([]);
+        setError('');
+      } else {
+        setError(data.error || 'Failed to delete all tickets');
+      }
+    } catch (err) {
+      console.error('Error deleting all tickets:', err);
+      setError('Network error while deleting tickets');
+    } finally {
+      setRemovingAll(false);
     }
   };
 
@@ -252,6 +284,24 @@ export default function TicketsPage({ params }) {
               </>
             )}
           </button>
+          {featureToggles.removeAllTicketsButton && totalCount > 0 && (
+            <button
+              onClick={handleRemoveAll}
+              disabled={removingAll}
+              className="px-4 py-2 rounded-md bg-red-600 text-white text-sm hover:bg-red-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {removingAll ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Removing...
+                </>
+              ) : (
+                <>
+                  🗑️ Remove All
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
 

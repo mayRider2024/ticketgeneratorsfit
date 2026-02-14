@@ -20,7 +20,8 @@ export default function AdminControlPage() {
     generateTicketButton: true,
     scanTicketsButton: true,
     ticketsButton: true,
-    removeTicketButton: true
+    removeTicketButton: true,
+    removeAllTicketsButton: true
   });
   const [togglesLoading, setTogglesLoading] = useState(false);
 
@@ -473,6 +474,32 @@ export default function AdminControlPage() {
                 featureToggles.removeTicketButton ? 'text-green-400' : 'text-red-400'
               }`}>
                 {featureToggles.removeTicketButton ? 'VISIBLE' : 'HIDDEN'}
+              </div>
+            </div>
+
+            {/* Remove All Tickets Button Toggle */}
+            <div className="bg-gray-700 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-white font-medium">Remove All Tickets Button</h3>
+                <button
+                  onClick={() => updateFeatureToggle('removeAllTicketsButton', !featureToggles.removeAllTicketsButton)}
+                  disabled={togglesLoading}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    featureToggles.removeAllTicketsButton ? 'bg-green-600' : 'bg-red-600'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                      featureToggles.removeAllTicketsButton ? 'translate-x-5' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              <p className="text-gray-400 text-sm">Show/hide the Remove All button that deletes all tickets for an event at once</p>
+              <div className={`mt-2 text-xs font-medium ${
+                featureToggles.removeAllTicketsButton ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {featureToggles.removeAllTicketsButton ? 'VISIBLE' : 'HIDDEN'}
               </div>
             </div>
           </div>

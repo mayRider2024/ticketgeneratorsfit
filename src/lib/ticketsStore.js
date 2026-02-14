@@ -138,6 +138,27 @@ export async function deleteTicket(eventId, ticketId) {
   return true;
 }
 
+export async function deleteAllTickets(eventId) {
+  if (!eventId) throw new Error('eventId is required');
+
+  if (prisma) {
+    try {
+      const result = await prisma.ticket.deleteMany({ where: { eventId } });
+      return result.count;
+    } catch (error) {
+      console.error('Error deleting all tickets from database:', error);
+      throw error;
+    }
+  }
+
+  // File-based storage fallback
+  const all = await readAll();
+  const remaining = all.filter(t => t.eventId !== eventId);
+  const deletedCount = all.length - remaining.length;
+  await writeAll(remaining);
+  return deletedCount;
+}
+
 function mapDbTicket(t) {
   return {
     eventId: t.eventId,

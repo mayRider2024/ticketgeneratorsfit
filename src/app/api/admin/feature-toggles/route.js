@@ -9,7 +9,8 @@ const DEFAULT_TOGGLES = {
   generateTicketButton: true,
   scanTicketsButton: true,
   ticketsButton: true,
-  removeTicketButton: true
+  removeTicketButton: true,
+  removeAllTicketsButton: true
 };
 
 // Read feature toggles from memory storage

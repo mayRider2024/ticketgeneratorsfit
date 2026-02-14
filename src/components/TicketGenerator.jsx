@@ -99,7 +99,7 @@ export default function TicketGenerator({ event }) {
   const qrCfg = config.qr || { x: 378, y: 1100, size: 400 };
   const qrSize = qrCfg.size || 400;
   const qrX = typeof qrCfg.x === 'number' ? qrCfg.x : 378;
-  const qrY = typeof qrCfg.y === 'number' ? qrCfg.y : 1100;
+  const qrY = typeof qrCfg.y === 'number' ? qrCfg.y : (imageEl ? (imageEl.height - qrSize - 12) : 1100);
     const qrCanvas = document.createElement('canvas');
     await QRCode.toCanvas(qrCanvas, qrString, { width: qrSize, margin: 0 });
     ctx.save();
@@ -153,7 +153,6 @@ export default function TicketGenerator({ event }) {
 
   async function handleSendEmail() {
     try {
-      await ensureIssued();
       setSending(true);
       // Always redraw to ensure latest canvas
       await draw();
@@ -185,8 +184,12 @@ export default function TicketGenerator({ event }) {
             throw new Error(json.error || 'Failed to send ticket');
           }
           
+          // Only issue the ticket entry after email is sent successfully
+          await ensureIssued();
           setStatus('Email sent successfully!');
           setError('');
+          // Reload the page after a short delay so user can see the success message
+          setTimeout(() => { window.location.reload(); }, 1500);
         } catch (e) {
           setError(`Failed to send email: ${e.message}`);
         } finally {
