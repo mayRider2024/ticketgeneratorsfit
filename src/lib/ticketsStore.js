@@ -8,41 +8,67 @@ import { prisma } from './prismaClient';
 //   issuedAt, hasEntered (bool), enteredAt (iso|null), lastUpdatedAt
 // }
 
+import { getMemoryData, setMemoryData } from './storage.js';
+
 const ticketsPath = path.join(process.cwd(), 'tickets.json');
 
 async function ensureFile() {
-  try { await fs.access(ticketsPath); } catch { await fs.writeFile(ticketsPath, '[]', 'utf8'); }
+  try {
+    await fs.access(ticketsPath);
+  } catch {
+    try {
+      await fs.writeFile(ticketsPath, '[]', 'utf8');
+    } catch (e) {
+      // Ignored if file system is read-only (e.g. Vercel)
+    }
+  }
 }
 
 async function readAll() {
+  const mem = getMemoryData('ticketsList');
+  if (Array.isArray(mem) && mem.length > 0) return mem;
+
   await ensureFile();
   try {
     const raw = await fs.readFile(ticketsPath, 'utf8');
     const data = JSON.parse(raw || '[]');
-    if (Array.isArray(data)) return data;
+    if (Array.isArray(data)) {
+      setMemoryData('ticketsList', data);
+      return data;
+    }
   } catch {/* ignore */}
-  return [];
+
+  return Array.isArray(mem) ? mem : [];
 }
 
 async function writeAll(list) {
-  await fs.writeFile(ticketsPath, JSON.stringify(list, null, 2), 'utf8');
+  setMemoryData('ticketsList', list);
+  try {
+    await fs.writeFile(ticketsPath, JSON.stringify(list, null, 2), 'utf8');
+  } catch (e) {
+    // Read-only filesystem on serverless/Vercel - memory fallback is used
+  }
 }
 
 export async function issueTicket({ eventId, ticketId, name, date, other, email }) {
   if (!eventId || !ticketId) throw new Error('eventId and ticketId required');
   if (!name || !name.trim()) throw new Error('name required');
   if (prisma) {
-    // Upsert by composite (eventId, ticketCode)
-  const data = { eventId, ticketCode: ticketId, name: name.trim(), date: date || '', other: other || '', email: email ? email.trim() : null };
-    // Find existing
-    const existing = await prisma.ticket.findFirst({ where: { eventId, ticketCode: ticketId } });
-    if (existing && !existing.hasEntered) {
-      const updated = await prisma.ticket.update({ where: { id: existing.id }, data });
-      return { created: false, ticket: mapDbTicket(updated) };
+    try {
+      // Upsert by composite (eventId, ticketCode)
+      const data = { eventId, ticketCode: ticketId, name: name.trim(), date: date || '', other: other || '', email: email ? email.trim() : null };
+      // Find existing
+      const existing = await prisma.ticket.findFirst({ where: { eventId, ticketCode: ticketId } });
+      if (existing && !existing.hasEntered) {
+        const updated = await prisma.ticket.update({ where: { id: existing.id }, data });
+        return { created: false, ticket: mapDbTicket(updated) };
+      }
+      if (existing) return { created: false, ticket: mapDbTicket(existing) };
+      const created = await prisma.ticket.create({ data: { ...data } });
+      return { created: true, ticket: mapDbTicket(created) };
+    } catch (error) {
+      console.error('Database error in issueTicket, falling back to file storage:', error.message);
     }
-    if (existing) return { created: false, ticket: mapDbTicket(existing) };
-    const created = await prisma.ticket.create({ data: { ...data } });
-    return { created: true, ticket: mapDbTicket(created) };
   }
   const all = await readAll();
   const existing = all.find(t => t.eventId === eventId && t.ticketId === ticketId);
@@ -65,8 +91,12 @@ export async function issueTicket({ eventId, ticketId, name, date, other, email 
 
 export async function getTicket(eventId, ticketId) {
   if (prisma) {
-    const t = await prisma.ticket.findFirst({ where: { eventId, ticketCode: ticketId } });
-    return t ? mapDbTicket(t) : null;
+    try {
+      const t = await prisma.ticket.findFirst({ where: { eventId, ticketCode: ticketId } });
+      return t ? mapDbTicket(t) : null;
+    } catch (error) {
+      console.error('Database error in getTicket, falling back to file storage:', error.message);
+    }
   }
   const all = await readAll();
   return all.find(t => t.eventId === eventId && t.ticketId === ticketId) || null;
@@ -74,11 +104,15 @@ export async function getTicket(eventId, ticketId) {
 
 export async function markEntry(eventId, ticketId) {
   if (prisma) {
-    const existing = await prisma.ticket.findFirst({ where: { eventId, ticketCode: ticketId } });
-    if (!existing) return null;
-    if (existing.hasEntered) return { updated: false, ticket: mapDbTicket(existing) };
-    const updated = await prisma.ticket.update({ where: { id: existing.id }, data: { hasEntered: true, enteredAt: new Date() } });
-    return { updated: true, ticket: mapDbTicket(updated) };
+    try {
+      const existing = await prisma.ticket.findFirst({ where: { eventId, ticketCode: ticketId } });
+      if (!existing) return null;
+      if (existing.hasEntered) return { updated: false, ticket: mapDbTicket(existing) };
+      const updated = await prisma.ticket.update({ where: { id: existing.id }, data: { hasEntered: true, enteredAt: new Date() } });
+      return { updated: true, ticket: mapDbTicket(updated) };
+    } catch (error) {
+      console.error('Database error in markEntry, falling back to file storage:', error.message);
+    }
   }
   const all = await readAll();
   const t = all.find(r => r.eventId === eventId && r.ticketId === ticketId);
@@ -95,8 +129,12 @@ export async function markEntry(eventId, ticketId) {
 
 export async function listTicketsByEvent(eventId) {
   if (prisma) {
-    const list = await prisma.ticket.findMany({ where: { eventId } });
-    return list.map(mapDbTicket);
+    try {
+      const list = await prisma.ticket.findMany({ where: { eventId } });
+      return list.map(mapDbTicket);
+    } catch (error) {
+      console.error('Database error in listTicketsByEvent, falling back to file storage:', error.message);
+    }
   }
   const all = await readAll();
   return all.filter(t => t.eventId === eventId);
@@ -120,8 +158,7 @@ export async function deleteTicket(eventId, ticketId) {
       await prisma.ticket.delete({ where: { id: existing.id } });
       return true;
     } catch (error) {
-      console.error('Error deleting ticket from database:', error);
-      throw error;
+      console.error('Error deleting ticket from database, falling back to file storage:', error.message);
     }
   }
 
@@ -146,8 +183,7 @@ export async function deleteAllTickets(eventId) {
       const result = await prisma.ticket.deleteMany({ where: { eventId } });
       return result.count;
     } catch (error) {
-      console.error('Error deleting all tickets from database:', error);
-      throw error;
+      console.error('Error deleting all tickets from database, falling back to file storage:', error.message);
     }
   }
 
